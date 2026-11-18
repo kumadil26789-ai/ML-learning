@@ -1,0 +1,38 @@
+project:
+  name: house-price-regression
+
+data:
+  raw_path: data/raw/houses.csv
+  target: price
+  test_size: 0.2
+  random_state: 42
+  min_target: 1            # rows with target below this (or missing) are dropped
+  id_columns: [id]         # ignored when detecting duplicates; never used as features
+
+features:
+  numeric: [area_sqft, bedrooms, bathrooms, age_years, lot_size, garage_spaces]
+  nonnegative: [area_sqft, bedrooms, bathrooms, age_years, lot_size, garage_spaces]  # negatives -> NaN
+  categorical_onehot: [property_type, heating, has_pool]   # low cardinality
+  categorical_target_encode: [neighborhood]                # high cardinality
+  ordinal:                                                 # ordered categories (low -> high)
+    condition: [poor, fair, good, excellent]
+  required: [area_sqft, bedrooms]    # must be supplied at inference time
+  add_engineered: true               # dataset-specific ratios; set false for other datasets
+  winsorize: [0.005, 0.995]          # outlier clipping quantiles, learned on train only
+  placeholders: ["", "n/a", "na", "nan", "null", "?", "-", "unknown", "missing"]
+
+training:
+  candidates: [ridge, random_forest, hist_gradient_boosting]
+  cv_folds: 5
+  log_target: true          # train on log1p(y), predict on original scale
+  tune: true
+  tune_iterations: 12
+  n_jobs: 1
+  random_state: 42
+
+artifacts:
+  model_dir: models
+  report_dir: reports
+
+api:
+  max_batch_size: 1000
